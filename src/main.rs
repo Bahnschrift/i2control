@@ -1,34 +1,12 @@
 mod cli;
-mod util;
 mod lighting;
+mod util;
 
 use clap::Parser;
-use cli::args::{Args, RGBMode};
+use cli::args::Args;
 use std::error::Error;
 
 use hidapi::{HidApi, HidDevice};
-
-fn set_rgb(mouse: &HidDevice, mode: RGBMode) -> Result<(), Box<dyn Error>> {
-    match mode {
-        RGBMode::Off => {
-            mouse.send_feature_report(get_dump!("../data/rgb/off/1"))?;
-            mouse.send_feature_report(get_dump!("../data/rgb/off/2"))?;
-            mouse.send_feature_report(get_dump!("../data/rgb/off/3"))?;
-        }
-        RGBMode::Glorious => {
-            mouse.send_feature_report(get_dump!("../data/rgb/glorious/1"))?;
-            mouse.send_feature_report(get_dump!("../data/rgb/glorious/2"))?;
-            mouse.send_feature_report(get_dump!("../data/rgb/glorious/3"))?;
-        }
-        RGBMode::SeamlessBreathing => {
-            mouse.send_feature_report(get_dump!("../data/rgb/seamless_breathing/1"))?;
-            mouse.send_feature_report(get_dump!("../data/rgb/seamless_breathing/2"))?;
-            mouse.send_feature_report(get_dump!("../data/rgb/seamless_breathing/3"))?;
-        }
-    }
-
-    Ok(())
-}
 
 fn set_polling_rate(mouse: &HidDevice, rate: u16) -> Result<(), Box<dyn Error>> {
     match rate {
@@ -71,10 +49,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         info.vendor_id(),
         info.product_id()
     );
-
-    if let Some(mode) = args.rgb {
-        set_rgb(&mouse, mode)?;
-    }
 
     if let Some(rate) = args.polling_rate {
         set_polling_rate(&mouse, rate)?;

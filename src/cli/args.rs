@@ -13,17 +13,10 @@ pub struct Args {
     #[arg(default_value_t = I2_PID)]
     pub pid: u16,
 
-    #[arg(short, long)]
-    pub rgb: Option<RGBMode>,
+    // #[arg(short, long)]
+    // pub rgb: Option<RGBMode>,
 
     /// Polling rate (in Hz). Must be one of 125, 250, 500, or 1000.
     #[arg(short, long)]
     pub polling_rate: Option<u16>,
-}
-
-#[derive(Debug, Clone, Copy, ValueEnum)]
-pub enum RGBMode {
-    Off,
-    Glorious,
-    SeamlessBreathing,
 }
