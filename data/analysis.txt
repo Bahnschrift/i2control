@@ -1,0 +1,42 @@
+All reports are 16 bytes.
+
+Extra data may be sent over multiple reports.
+
+Byte 1:     0x3 (HID Report ID)
+Byte 2:     Number of reports (0x2 = 3 reports, 0x4 = 4 reports)
+Byte 3:     0xFB
+Byte 4:     Report number (0-indexed)
+Byte 5:     0x01
+Bytes 6-16: Operation-dependent
+
+=========================================================================
+
+Set RGB mode (does not allow changing colours):
+
+Byte 2: 0x2 (3 reports)
+
+Report 1:
+Byte 6:      RGB mode (0x0 = off, 0x1 = glorious, 0x2 = breathing, etc.)
+Bytes 7-11:  Brightness / speed (unsure?)
+Bytes 12-14: Colour 1 (R, G, B)
+Bytes 15-16: 0x0
+
+Report 2:
+Byte 6:      RGB mode
+Bytes 7-9:   Colour 2
+Bytes 10-12: Colour 3
+Bytes 13-15: Colour 4
+
+Report 3:
+Byte 6:      RGB mode
+Bytes 7-9:   Colour 5
+Bytes 10-12: Colour 6
+Bytes 13-15: Colour 7
+
+Colours are all 0x0 if the mode has no colours (e.g.).
+
+TODO: Single colour modes
+TODO: Brightness / speed
+TODO: Changing colours
+
+=========================================================================

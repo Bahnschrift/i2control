@@ -5,8 +5,8 @@ use std::error::Error;
 
 use hidapi::{HidApi, HidDevice};
 
-const I2_VID: u16 = 2362;
-const I2_PID: u16 = 33309;
+const I2_VID: u16 = 0x93A;
+const I2_PID: u16 = 0x821D;
 
 #[derive(Parser)]
 struct Args {
