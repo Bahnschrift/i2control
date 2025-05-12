@@ -19,7 +19,7 @@ struct Args {
     #[arg(short, long)]
     rgb: Option<RGBMode>,
 
-    /// Polling rate (in Hz). Must be one of 100, 250, 500, or 1000.
+    /// Polling rate (in Hz). Must be one of 125, 250, 500, or 1000.
     #[arg(short, long)]
     polling_rate: Option<u16>,
 }
@@ -28,7 +28,7 @@ struct Args {
 enum RGBMode {
     Off,
     Glorious,
-    Breathing,
+    SeamlessBreathing,
 }
 
 fn set_rgb(mouse: &HidDevice, mode: RGBMode) -> Result<(), Box<dyn Error>> {
@@ -43,11 +43,11 @@ fn set_rgb(mouse: &HidDevice, mode: RGBMode) -> Result<(), Box<dyn Error>> {
             mouse.send_feature_report(get_dump!("../data/rgb/glorious/2"))?;
             mouse.send_feature_report(get_dump!("../data/rgb/glorious/3"))?;
         }
-        RGBMode::Breathing => {
-            mouse.send_feature_report(get_dump!("../data/rgb/breathing/1"))?;
-            mouse.send_feature_report(get_dump!("../data/rgb/breathing/2"))?;
-            mouse.send_feature_report(get_dump!("../data/rgb/breathing/3"))?;
-        }
+        RGBMode::SeamlessBreathing => {
+            mouse.send_feature_report(get_dump!("../data/rgb/seamless_breathing/1"))?;
+            mouse.send_feature_report(get_dump!("../data/rgb/seamless_breathing/2"))?;
+            mouse.send_feature_report(get_dump!("../data/rgb/seamless_breathing/3"))?;
+        },
     }
 
     Ok(())
@@ -73,8 +73,8 @@ fn set_polling_rate(mouse: &HidDevice, rate: u16) -> Result<(), Box<dyn Error>> 
             mouse.send_feature_report(get_dump!("../data/polling/1000Hz/3"))?;
             mouse.send_feature_report(get_dump!("../data/polling/1000Hz/4"))?;
         }
-        100 => todo!(),
-        _ => return Err("Invalid polling rate. Must be one of 100, 250, 500, 1000".into()),
+        125 => todo!(),
+        _ => return Err("Invalid polling rate. Must be one of 125, 250, 500, 1000".into()),
     }
 
     Ok(())
