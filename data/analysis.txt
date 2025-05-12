@@ -40,3 +40,12 @@ TODO: Brightness / speed
 TODO: Changing colours
 
 =========================================================================
+
+Set polling rate:
+
+Byte 2:     0x4 (4 reports)
+Bytes 6-9:  0x00 0x01 0x01 0x02
+Byte 10:     Polling rate (0x1 = 100Hz?, 0x2 = 250hz, 0x3 = 500Hz, 0x4 = 1000Hz)
+Bytes 11-16: 0x00 0x10 0x00 0x26 0xB4 0xFF
+
+=========================================================================
