@@ -3,7 +3,7 @@ All reports are 16 bytes.
 Extra data may be sent over multiple reports.
 
 Byte 1:     0x3 (HID Report ID)
-Byte 2:     Number of reports (0x2 = 3 reports, 0x4 = 4 reports)
+Byte 2:     Operation
 Byte 3:     0xFB
 Byte 4:     Report number (0-indexed)
 Byte 5:     0x01
@@ -13,22 +13,22 @@ Bytes 6-16: Operation-dependent
 
 Set RGB mode (does not allow changing colours):
 
-Byte 2: 0x2 (3 reports)
+Byte 2: 0x02
 
 Report 1:
-Byte 6:      RGB mode (see below)
-Byte 7:      Wired rate (see below)
-Byte 8:      Wired brightness (see below)
-Byte 9:      Num colours (probably needs to match RGB mode?)
-Byte 10:     Wireless rate
-Byte 11:     Wireless brightness
+Byte 6:  RGB mode (see below)
+Byte 7:  Wired rate (see below)
+Byte 8:  Wired brightness (see below)
+Byte 9:  Num colours (probably needs to match RGB mode?)
+Byte 10: Wireless rate
+Byte 11: Wireless brightness
 
 Remaining bytes / reports:
-Bytes 1-6:       Always same as report 1
+Bytes 1-6:       Same as report 1 (apart from report number)
 Remaining bytes: RGB of the colours in order, moving to the next report if there is not enough room for all 3 bytes.
 
 RGB Modes:
-The RGB mode is given as a value between 0x00 and 0x08. Each mode has a required number of colours, and not all modes can have these colours customized from the defaults.
+The RGB mode is given as a value between 0x00 and 0x08. Each mode has a required number of colours. Some modes support customization of the first colour only.
 
 0x00: Off (0)
 0x01: Glorious mode (7: #FF0000, #FFC400, #FBFF00, #00FF33, #00FBFF, #0004FF, #E600FF)
@@ -45,11 +45,20 @@ Rate and brightness are given as values between 0x00 and 0x14 (inclusive). A val
 
 =========================================================================
 
-Set polling rate:
+Polling rate / DPI:
 
-Byte 2:     0x4 (4 reports)
-Bytes 6-9:  0x00 0x01 0x01 0x02
-Byte 10:     Polling rate (0x1 = 100Hz?, 0x2 = 250hz, 0x3 = 500Hz, 0x4 = 1000Hz)
-Bytes 11-16: 0x00 0x10 0x00 0x26 0xB4 0xFF
+Byte 2:      0x04
+Bytes 6-9:   0x00 0x01 0x01 0x02 (TODO)
+Byte 10:     Polling rate (0x1 = 125Hz, 0x2 = 250hz, 0x3 = 500Hz, 0x4 = 1000Hz)
+Bytes 11-16: 0x00 0x10 0x00 0x26 0xB4 0xFF (TODO: DPI)
+
+=========================================================================
+
+Global timeout:
+
+Byte 2: 0x06
+Byte 4: Timeout
+
+Timeout is given in minutes can range from 0x00 to 0x64. 0x64 displays as infinity in Core. Disabling the global timeout is equivalent to 0xFF.
 
 =========================================================================
