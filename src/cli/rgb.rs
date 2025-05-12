@@ -23,11 +23,36 @@ impl From<ParseIntError> for ParseRgbError {
     }
 }
 
+/// RGB value, represented as three u8s.
+/// Example:
+/// ```
+/// let rgb: Rgb = "#FF0005".parse().unwrap();
+/// println!("{rgb}, {rgb:?}"); // #FF0005, Rgb { r: 255, g: 0, b: 5 }
+/// ```
 #[derive(Debug, Clone, Default)]
 pub struct Rgb {
     r: u8,
     g: u8,
     b: u8,
+}
+
+impl Rgb {
+    pub const fn new(r: u8, g: u8, b: u8) -> Self {
+        Rgb { r, g, b }
+    }
+}
+
+/// Creates a new RGB value from the given values.
+/// Example:
+/// ```
+/// let rgb = rgb![0xFF, 0x00, 0x50];
+/// println!("{rgb}");
+/// ```
+#[macro_export]
+macro_rules! rgb {
+    [$r:expr, $g:expr, $b:expr] => {
+        crate::cli::rgb::Rgb::new($r, $g, $b)
+    };
 }
 
 impl std::fmt::Display for Rgb {

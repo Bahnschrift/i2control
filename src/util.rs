@@ -3,7 +3,7 @@ use std::num::ParseIntError;
 #[macro_export]
 macro_rules! get_dump {
     ($path:literal) => {
-        crate::dump::hex_from_dump(include_str!($path))?.as_slice()
+        crate::util::hex_from_dump(include_str!($path))?.as_slice()
     };
 }
 

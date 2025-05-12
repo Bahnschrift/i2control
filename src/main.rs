@@ -1,36 +1,12 @@
-mod dump;
-mod rgb;
+mod cli;
+mod util;
+mod lighting;
 
-use clap::{Parser, ValueEnum};
+use clap::Parser;
+use cli::args::{Args, RGBMode};
 use std::error::Error;
 
 use hidapi::{HidApi, HidDevice};
-
-const I2_VID: u16 = 0x93A;
-const I2_PID: u16 = 0x821D;
-
-#[derive(Debug, Parser)]
-struct Args {
-    #[arg(default_value_t = I2_VID)]
-    vid: u16,
-
-    #[arg(default_value_t = I2_PID)]
-    pid: u16,
-
-    #[arg(short, long)]
-    rgb: Option<RGBMode>,
-
-    /// Polling rate (in Hz). Must be one of 125, 250, 500, or 1000.
-    #[arg(short, long)]
-    polling_rate: Option<u16>,
-}
-
-#[derive(Debug, Clone, Copy, ValueEnum)]
-enum RGBMode {
-    Off,
-    Glorious,
-    SeamlessBreathing,
-}
 
 fn set_rgb(mouse: &HidDevice, mode: RGBMode) -> Result<(), Box<dyn Error>> {
     match mode {
