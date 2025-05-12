@@ -1,2 +1,3 @@
 /target
-data/capture.pcapng
+/notes
+*.pcapng

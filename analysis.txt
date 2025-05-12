@@ -41,7 +41,7 @@ The RGB mode is given as a value between 0x00 and 0x08. Each mode has a required
 0x08: Wave (7: TODO)
 
 Rate / brightness:
-Rate and brightness are given as values between 0x00 and 0x14 (inclusive). A value of 0x00 for rate probably doesn't work.
+Rate and brightness are given as values between 0x00 and 0x14 (inclusive). A rate of 0x00  probably doesn't work.
 
 =========================================================================
 
