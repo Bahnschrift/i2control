@@ -1,4 +1,5 @@
 mod dump;
+mod rgb;
 
 use clap::{Parser, ValueEnum};
 use std::error::Error;
@@ -47,7 +48,7 @@ fn set_rgb(mouse: &HidDevice, mode: RGBMode) -> Result<(), Box<dyn Error>> {
             mouse.send_feature_report(get_dump!("../data/rgb/seamless_breathing/1"))?;
             mouse.send_feature_report(get_dump!("../data/rgb/seamless_breathing/2"))?;
             mouse.send_feature_report(get_dump!("../data/rgb/seamless_breathing/3"))?;
-        },
+        }
     }
 
     Ok(())
