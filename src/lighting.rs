@@ -93,7 +93,7 @@ pub fn set_lighting(
         LightingMode::SingleColour { col } => rb = rb.extend_contiguous(&col.bytes())?,
         LightingMode::BreathingSingleColour { col } => rb = rb.extend_contiguous(&col.bytes())?,
         LightingMode::Tail => palette!(TAIL_PALETTE, rb),
-        LightingMode::Rave { col } => palette!(BREATHING_PALETTE, rb, col),
+        LightingMode::Rave { col } => palette!(RAVE_PALETTE, rb, col),
         LightingMode::Wave => palette!(WAVE_PALETTE, rb),
     }
 
