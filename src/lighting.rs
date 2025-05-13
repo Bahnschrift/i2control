@@ -59,6 +59,15 @@ mod palettes {
     ];
 }
 
+macro_rules! palette {
+    ($p:expr, $rb:ident $(, $c:expr)?) => {{
+        $($rb = $rb.extend_contiguous(&$c.bytes())?;)?
+        for c in $p {
+            $rb = $rb.extend_contiguous(&c.bytes())?;
+        }
+    }};
+}
+
 pub fn set_lighting(
     mouse: &HidDevice,
     brightness: u8,
@@ -78,47 +87,14 @@ pub fn set_lighting(
 
     match mode {
         LightingMode::Off => (),
-        LightingMode::Glorious => {
-            for c in GLORIOUS_PALETTE {
-                rb = rb.extend_contiguous(&c.bytes())?;
-            }
-        }
-        LightingMode::SeamlessBreathing => {
-            for c in SEAMLESS_BREATHING_PALETTE {
-                rb = rb.extend_contiguous(&c.bytes())?;
-            }
-        }
-        LightingMode::Breathing { col } => {
-            rb = rb.extend_contiguous(&col.bytes())?;
-            for c in BREATHING_PALETTE {
-                rb = rb.extend_contiguous(&c.bytes())?;
-            }
-        }
-        LightingMode::SingleColour { col } => {
-            rb = rb.extend_contiguous(&col.bytes())?;
-        }
-        LightingMode::BreathingSingleColour { col } => {
-            rb = rb.extend_contiguous(&col.bytes())?;
-            for c in BREATHING_PALETTE {
-                rb = rb.extend_contiguous(&c.bytes())?;
-            }
-        }
-        LightingMode::Tail => {
-            for c in TAIL_PALETTE {
-                rb = rb.extend_contiguous(&c.bytes())?;
-            }
-        }
-        LightingMode::Rave { col } => {
-            rb = rb.extend_contiguous(&col.bytes())?;
-            for c in RAVE_PALETTE {
-                rb = rb.extend_contiguous(&c.bytes())?;
-            }
-        }
-        LightingMode::Wave => {
-            for c in WAVE_PALETTE {
-                rb = rb.extend_contiguous(&c.bytes())?;
-            }
-        }
+        LightingMode::Glorious => palette!(GLORIOUS_PALETTE, rb),
+        LightingMode::SeamlessBreathing => palette!(SEAMLESS_BREATHING_PALETTE, rb),
+        LightingMode::Breathing { col } => palette!(BREATHING_PALETTE, rb, col),
+        LightingMode::SingleColour { col } => rb = rb.extend_contiguous(&col.bytes())?,
+        LightingMode::BreathingSingleColour { col } => rb = rb.extend_contiguous(&col.bytes())?,
+        LightingMode::Tail => palette!(TAIL_PALETTE, rb),
+        LightingMode::Rave { col } => palette!(BREATHING_PALETTE, rb, col),
+        LightingMode::Wave => palette!(WAVE_PALETTE, rb),
     }
 
     let reports = rb.build();
