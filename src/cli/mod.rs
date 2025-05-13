@@ -17,7 +17,7 @@ const I2_WL_PID: u16 = 0x821D;
     name = "i2control",
     about = "CLI replacement for Glorious Control for the Model I2 Wireless"
 )]
-pub struct Args {
+pub struct Cli {
     /// Vendor ID
     #[arg(default_value_t = I2_WL_VID)]
     pub vid: u16,
@@ -60,6 +60,22 @@ pub enum Commands {
     #[command(short_flag = 'd')]
     #[command(about = "Configure DPI profiles")]
     Dpi {},
+
+    #[command(short_flag = 't')]
+    #[command(about = "Set the inactivity timeout")]
+    #[group(required = true, multiple = false)]
+    Timeout {
+        /// Disable auto inactivity sleep
+        #[arg(short = 'd', long = "disable")]
+        disable: bool,
+
+        /// Minutes of inactivity before sleep (0 to 100 inclusive).
+        ///
+        /// A value of 100 is rendered as infinity in Glorious Core.
+        /// It is untested whether this is equivalent to disabling the timeout.
+        #[arg(value_parser = value_parser!(u8).range(0x00..=0x64))]
+        minutes: Option<u8>,
+    },
 }
 
 /// Lighting effects corresponding to the options in Glorious Core.

@@ -7,9 +7,7 @@ pub const REPORT_ID: u8 = 0x03;
 pub const REPORT_LEN: usize = 16;
 
 /// Number of bytes required for the header of each report
-const HEADER_LEN: usize = 5;
-
-const DATA_LEN: usize = REPORT_LEN - HEADER_LEN;
+const DEFAULT_HEADER_LEN: usize = 5;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Report {
@@ -18,7 +16,7 @@ pub struct Report {
 }
 
 impl Report {
-    pub const fn default_header(operation: u8, index: u8) -> [u8; HEADER_LEN] {
+    pub const fn default_header(operation: u8, index: u8) -> [u8; DEFAULT_HEADER_LEN] {
         [REPORT_ID, operation, 0xFB, index, 0x01]
     }
 
@@ -43,7 +41,7 @@ impl<'a> ReportBuilder<'a> {
             num_reports,
             data: vec![Vec::new(); num_reports as usize],
             i: 0,
-            header_len: HEADER_LEN,
+            header_len: DEFAULT_HEADER_LEN,
             header_fn: None,
         }
     }
@@ -73,7 +71,7 @@ impl<'a> ReportBuilder<'a> {
     }
 
     pub fn len(&self) -> usize {
-        self.i * DATA_LEN + self.data[self.i].len()
+        self.i * self.data_len() + self.data[self.i].len()
     }
 
     /// Moves to the next internal report

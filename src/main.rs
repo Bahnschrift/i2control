@@ -2,12 +2,14 @@
 mod cli;
 mod lighting;
 mod report;
+mod timeout;
 mod util;
 
 use clap::Parser;
-use cli::{Args, Commands};
+use cli::{Cli, Commands};
 use lighting::set_lighting;
 use std::error::Error;
+use timeout::set_timeout;
 
 use hidapi::{DeviceInfo, HidApi};
 
@@ -22,7 +24,7 @@ fn print_device_info(info: &DeviceInfo) {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let args = Args::parse();
+    let args = Cli::parse();
     let api = HidApi::new()?;
 
     let mouse = api.open(args.vid, args.pid)?;
@@ -35,6 +37,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             rate,
             mode,
         } => set_lighting(&mouse, brightness, rate, mode)?,
+        Commands::Timeout {
+            disable: _,
+            minutes,
+        } => set_timeout(&mouse, minutes)?,
         _ => todo!(),
     }
 
