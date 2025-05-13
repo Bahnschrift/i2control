@@ -1,0 +1,9 @@
+# See https://github.com/libusb/hidapi/blob/master/udev/69-hid.rules for more information
+
+# Glorious Model I2 Wireless (2.4 GHz wireless mode)
+SUBSYSTEMS=="hidraw", ATTRS{idVendor}=="093a", ATTRS{idProduct}=="821d", MODE="0666"
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="093a", ATTRS{idProduct}=="821d", MODE="0666"
+
+# Glorious Model I2 Wireless (wired mode)
+SUBSYSTEMS=="hidraw", ATTRS{idVendor}=="093a", ATTRS{idProduct}=="821a", MODE="0666"
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="093a", ATTRS{idProduct}=="821a", MODE="0666"
