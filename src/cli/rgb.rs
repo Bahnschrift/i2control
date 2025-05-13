@@ -40,6 +40,10 @@ impl Rgb {
     pub const fn new(r: u8, g: u8, b: u8) -> Self {
         Rgb { r, g, b }
     }
+
+    pub fn bytes(&self) -> [u8; 3] {
+        [self.r, self.g, self.b]
+    }
 }
 
 /// Creates a new RGB value from the given values.
@@ -52,7 +56,7 @@ impl Rgb {
 #[macro_export]
 macro_rules! rgb {
     ($r:expr, $g:expr, $b:expr) => {
-        crate::cli::rgb::Rgb::new($r, $g, $b)
+        Rgb::new($r, $g, $b)
     };
 
     ($rgb:expr) => {{
@@ -60,7 +64,7 @@ macro_rules! rgb {
         let r = ((rgb & 0xFF0000) >> 16) as u8;
         let g = ((rgb & 0x00FF00) >> 8) as u8;
         let b = (rgb & 0x0000FF) as u8;
-        crate::cli::rgb::Rgb::new(r, g, b)
+        Rgb::new(r, g, b)
     }};
 }
 

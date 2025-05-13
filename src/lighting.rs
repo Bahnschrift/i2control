@@ -1,6 +1,18 @@
-use crate::cli::rgb::Rgb;
+use std::error::Error;
 
-pub mod palettes {
+use hidapi::HidDevice;
+use palettes::{
+    BREATHING_PALETTE, GLORIOUS_PALETTE, RAVE_PALETTE, SEAMLESS_BREATHING_PALETTE, TAIL_PALETTE,
+    WAVE_PALETTE,
+};
+
+use crate::{
+    cli::LightingMode,
+    report::{Report, ReportBuilder},
+};
+
+// TODO: Move this to a LightingMode impl
+mod palettes {
     use crate::{cli::rgb::Rgb, rgb};
 
     pub const GLORIOUS_PALETTE: [Rgb; 7] = [
@@ -47,19 +59,72 @@ pub mod palettes {
     ];
 }
 
-/// Lighting effects corresponding to the options in Glorious Core.
-/// Variants with an RGB value require a specified custom colour.
-/// Casting to `u8` gives the correct byte for HID reports.
-#[repr(u8)]
-#[derive(Debug, Clone, Copy)]
-pub enum RGBMode {
-    Off,
-    Glorious,
-    SeamlessBreathing,
-    Breathing(Rgb),
-    SingleColour(Rgb),
-    BreathingSingleColour(Rgb),
-    Tail,
-    Rave(Rgb),
-    Wave,
+pub fn set_lighting(
+    mouse: &HidDevice,
+    brightness: u8,
+    rate: u8,
+    mode: LightingMode,
+) -> Result<(), Box<dyn Error>> {
+    let mut rb = ReportBuilder::new_with_header(0x02, 3, 6, |index| {
+        let mut header = Report::default_header(0x02, index).to_vec();
+        header.push(mode.mode_id());
+        header
+    })
+    .push(rate)?
+    .push(brightness)?
+    .push(mode.num_colours())?
+    .push(rate)?
+    .push(brightness)?;
+
+    match mode {
+        LightingMode::Off => (),
+        LightingMode::Glorious => {
+            for c in GLORIOUS_PALETTE {
+                rb = rb.extend_contiguous(&c.bytes())?;
+            }
+        }
+        LightingMode::SeamlessBreathing => {
+            for c in SEAMLESS_BREATHING_PALETTE {
+                rb = rb.extend_contiguous(&c.bytes())?;
+            }
+        }
+        LightingMode::Breathing { col } => {
+            rb = rb.extend_contiguous(&col.bytes())?;
+            for c in BREATHING_PALETTE {
+                rb = rb.extend_contiguous(&c.bytes())?;
+            }
+        }
+        LightingMode::SingleColour { col } => {
+            rb = rb.extend_contiguous(&col.bytes())?;
+        }
+        LightingMode::BreathingSingleColour { col } => {
+            rb = rb.extend_contiguous(&col.bytes())?;
+            for c in BREATHING_PALETTE {
+                rb = rb.extend_contiguous(&c.bytes())?;
+            }
+        }
+        LightingMode::Tail => {
+            for c in TAIL_PALETTE {
+                rb = rb.extend_contiguous(&c.bytes())?;
+            }
+        }
+        LightingMode::Rave { col } => {
+            rb = rb.extend_contiguous(&col.bytes())?;
+            for c in RAVE_PALETTE {
+                rb = rb.extend_contiguous(&c.bytes())?;
+            }
+        }
+        LightingMode::Wave => {
+            for c in WAVE_PALETTE {
+                rb = rb.extend_contiguous(&c.bytes())?;
+            }
+        }
+    }
+
+    let reports = rb.build();
+    for report in reports {
+        report.send(mouse)?;
+    }
+
+    Ok(())
 }

@@ -7,6 +7,7 @@ macro_rules! get_dump {
     };
 }
 
+#[allow(dead_code)]
 pub fn hex_from_dump(dump: &str) -> Result<Vec<u8>, ParseIntError> {
     let mut dat = Vec::new();
     for line in dump.lines() {
