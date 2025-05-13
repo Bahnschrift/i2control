@@ -59,6 +59,8 @@ mod palettes {
     ];
 }
 
+const OPERATION_ID: u8 = 0x02;
+
 macro_rules! palette {
     ($p:expr, $rb:ident $(, $c:expr)?) => {{
         $($rb = $rb.extend_contiguous(&$c.bytes())?;)?
@@ -74,7 +76,7 @@ pub fn set_lighting(
     rate: u8,
     mode: LightingMode,
 ) -> Result<(), Box<dyn Error>> {
-    let mut rb = ReportBuilder::new_with_header(0x02, 3, 6, |index| {
+    let mut rb = ReportBuilder::new_with_header(OPERATION_ID, 3, 6, |index| {
         let mut header = Report::default_header(0x02, index).to_vec();
         header.push(mode.mode_id());
         header

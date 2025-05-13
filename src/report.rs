@@ -46,6 +46,11 @@ impl<'a> ReportBuilder<'a> {
         }
     }
 
+    /// The header is the first few bytes of every report in a message.
+    /// Usually these bytes are the same, but sometimes a custom header is required.
+    ///
+    /// If a custom header is required, the supplied `header_fn` closure MUST always return a vector
+    /// with length `header_len` to avoid unexpected behaviour.
     pub fn new_with_header(
         operation: u8,
         num_reports: u8,
