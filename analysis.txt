@@ -1,71 +1,131 @@
-All reports are 16 bytes.
+A "message" consists of 1 or more "reports", and contains information for a single operation informing the mouse what settings to change. The number of reports depends on the operation.
 
-Extra data may be sent over multiple reports.
+Though Glorious Core sends reports as 64 bytes, only 16 bytes are actually used, so the length of a report can be considered as 16 bytes.
 
-Byte 1:     0x3 (HID Report ID)
-Byte 2:     Operation
-Byte 3:     0xFB
-Byte 4:     Report number (0-indexed)
-Byte 5:     0x01
-Bytes 6-16: Operation-dependent
+All reports in a message begin with a header, which is usually the following:
+
+Byte 1: 0x03 (HID Report ID)
+Byte 2: Operation ID (see below)
+Byte 3: 0xFB
+Byte 4: Report number (0-indexed)
+Byte 5: 0x01
+
+Some operations may require a slightly different header.
+
+The remaining bytes of a report (usually 16 - 5 = 11) will be referred to as the "data section" of a report.
+
+A "block" of data will refer to a contiguous sequence of bytes that are all sent as part of the same report. If there is not enough room to attach a whole block to the data section of the current report, then the rest of the current report is filled with 0x00 bytes, and the block is placed at the start of the data section of the next report.
 
 =========================================================================
 
-Set RGB mode (does not allow changing colours): 3 reports
+Lighting
+Operation ID: 0x02
+# of reports: 3
 
-Byte 2: 0x02
+Lighting headers are slightly modified to include:
+Byte 6: Lighting mode
+
+Note that this byte is present in ALL reports in a lighting message.
 
 Report 1:
-Byte 6:  RGB mode (see below)
-Byte 7:  Wired rate (see below)
-Byte 8:  Wired brightness (see below)
+Byte 7:  Wired rate
+Byte 8:  Wired brightness
 Byte 9:  Num colours (probably needs to match RGB mode?)
 Byte 10: Wireless rate
 Byte 11: Wireless brightness
 
-Remaining bytes / reports:
-Bytes 1-6:       Same as report 1 (apart from report number)
-Remaining bytes: RGB of the colours in order, moving to the next report if there is not enough room for all 3 bytes.
+The colours of the current profile are then sent one by one in order as blocks of red, green, and blue bytes, in accordance with the colours below.
 
-RGB Modes:
-The RGB mode is given as a value between 0x00 and 0x08. Each mode has a required number of colours. Some modes support customization of the first colour only.
+Lighting modes:
+The lighting mode is given as a value between 0x00 and 0x08 (inclusive). Each mode has a required number of colours, which should be reflected in byte 9. Some modes support customization, but only of the first colour.
 
 0x00: Off (0)
-0x01: Glorious mode (7: #FF0000, #FFC400, #FBFF00, #00FF33, #00FBFF, #0004FF, #E600FF)
-0x02: Seamless breathing (7: #FF0000, #FFC400, #FBFF00, #00FF33, #00FBFF, #0004FF, #E600FF)
-0x03: Breathing (6: customizable, #0AFF7D, #FF600A, #0AFFE5, #FF0AD4, #FF0000)
-0x04: Single colour (1: customizable)
-0x05: Breathing single colour (1: customizable)
-0x06: Tail (6: #FFF60A, #0AFF7D, #FF600A, #0AFFE5, #FF0AD4, #FF0000)
-0x07: Rave (2: customizable, #FFFF00)
-0x08: Wave (7: #FFF60A, #0AFF7D, #FF600A, #0AFFE5, #FF0AD4, #000000, #FF0000)
+0x01: Glorious mode (7)
+    - #FF0000
+    - #FFC400
+    - #FBFF00
+    - #00FF33
+    - #00FBFF
+    - #0004FF
+    - #E600FF
+0x02: Seamless breathing (7)
+    - #FF0000
+    - #FFC400
+    - #FBFF00
+    - #00FF33
+    - #00FBFF
+    - #0004FF
+    - #E600FF
+0x03: Breathing (6)
+    - customizable
+    - #0AFF7D
+    - #FF600A
+    - #0AFFE5
+    - #FF0AD4
+    - #FF0000
+0x04: Single colour (1)
+    - customizable
+0x05: Breathing single colour (1)
+    - customizable
+0x06: Tail (6)
+    - #FFF60A
+    - #0AFF7D
+    - #FF600A
+    - #0AFFE5
+    - #FF0AD4
+    - #FF0000
+0x07: Rave (2)
+    - customizable
+    - #FFFF00
+0x08: Wave (7)
+    - #FFF60A
+    - #0AFF7D
+    - #FF600A
+    - #0AFFE5
+    - #FF0AD4
+    - #000000
+    - #FF0000
 
 Rate / brightness:
 Rate and brightness are given as values between 0x00 and 0x14 (inclusive). A rate of 0x00  probably doesn't work.
 
 =========================================================================
 
-Polling rate / DPI: 4 reports
+Polling rate / DPI:
+Operation ID: 0x04
+# of reports: 4
 
-Byte 2:      0x04
+Information for polling rate, lift off distance?, debounce time?, and DPI is all sent in the same message.
+
+There may be up to 6 set DPI stages.
 
 Report 1:
-Byte 6:      Selected DPI Index
-Byte 7:      Number of DPIs?
-Byte 8:      0x01?
-Byte 9:      0x02?
-Byte 10:     Polling rate (0x1 = 125Hz, 0x2 = 250hz, 0x3 = 500Hz, 0x4 = 1000Hz)
-Bytes 11-16: 0x00 0x10 0x00 0x26 0xB4 0xFF (TODO: DPI)
+Byte 6:  Current DPI stage index (0x00 to 0x05)
+Byte 7:  # of DPI stages (0x00 to 0x06)
+Byte 8:  Lift off distance (in mm, either 0x01 or 0x02)
+Byte 9:  Debounce time (in ms, 0x00 to 0x10. Core only sends multiples of 2)
+Byte 10: Polling rate (0x1 = 125Hz, 0x2 = 250hz, 0x3 = 500Hz, 0x4 = 1000Hz)
+Byte 11: 0x00
 
-Reports 2-3 just contain header information (i.e. bytes 1-5).
+Each DPI stage is then sent as a block of 5 bytes in the following format:
+Bytes 1 - 2: (DPI / 50) in little endian
+Bytes 3 - 5: RGB of the stage in Glorious Core
+
+The colour sent as bytes 3 - 5 in each block does not matter.
+
+Sending 0 DPI stages does work and is done by Glorious Core, but in this case the mouse just uses whichever DPI it previously had active.
 
 =========================================================================
 
 Global timeout:
+Operation ID: 0x06
+# of reports: 1
 
-Byte 2: 0x06
+Global timeout headers only include the first 3 bytes of a regular header (ending after 0xFB).
+
+Report 1:
 Byte 4: Timeout
 
-Timeout is given in minutes can range from 0x00 to 0x64. 0x64 displays as infinity in Core. Disabling the global timeout is equivalent to 0xFF.
+Timeout is given in minutes and can range from 0x00 to 0x64. 0x64 displays as infinity in Core (untested whether this actually disables the timeout). If global timeout is disabled with the toggle in Core, then 0xFF is sent instead.
 
 =========================================================================

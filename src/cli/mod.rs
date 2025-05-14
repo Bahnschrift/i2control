@@ -7,9 +7,9 @@ use rgb::Rgb;
 //       This may require some sort of udev rule generation, at least on linux targets.
 
 /// Model I2 Wireless Vendor ID
-const I2_WL_VID: u16 = 0x93A;
+pub const I2_WL_VID: u16 = 0x93A;
 /// Model I2 Wireless 2.4GHz wireless mode Product ID
-const I2_WL_PID: u16 = 0x821D;
+pub const I2_WL_PID: u16 = 0x821D;
 
 /// CLI Arguments
 #[derive(Debug, Parser)]
