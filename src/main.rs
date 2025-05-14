@@ -1,7 +1,7 @@
 // TODO: Proper project structure - may need a workspace
 mod cli;
 mod lighting;
-mod report;
+mod message;
 mod timeout;
 mod util;
 

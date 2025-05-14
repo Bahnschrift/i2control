@@ -8,7 +8,7 @@ use palettes::{
 
 use crate::{
     cli::LightingMode,
-    report::{Report, ReportBuilder},
+    message::{MessageBuilder, default_header},
 };
 
 // TODO: Move this to a LightingMode impl
@@ -62,10 +62,10 @@ mod palettes {
 const OPERATION_ID: u8 = 0x02;
 
 macro_rules! palette {
-    ($p:expr, $rb:ident $(, $c:expr)?) => {{
-        $($rb = $rb.extend_contiguous(&$c.bytes())?;)?
+    ($p:expr, $mb:ident $(, $c:expr)?) => {{
+        $($mb = $mb.extend_block(&$c.bytes())?;)?
         for c in $p {
-            $rb = $rb.extend_contiguous(&c.bytes())?;
+            $mb = $mb.extend_block(&c.bytes())?;
         }
     }};
 }
@@ -76,8 +76,8 @@ pub fn set_lighting(
     rate: u8,
     mode: LightingMode,
 ) -> Result<(), Box<dyn Error>> {
-    let mut rb = ReportBuilder::new_with_header(OPERATION_ID, 3, 6, |index| {
-        let mut header = Report::default_header(0x02, index).to_vec();
+    let mut mb = MessageBuilder::new_with_header(OPERATION_ID, 3, 6, |index| {
+        let mut header = default_header(0x02, index).to_vec();
         header.push(mode.mode_id());
         header
     })
@@ -89,20 +89,16 @@ pub fn set_lighting(
 
     match mode {
         LightingMode::Off => (),
-        LightingMode::Glorious => palette!(GLORIOUS_PALETTE, rb),
-        LightingMode::SeamlessBreathing => palette!(SEAMLESS_BREATHING_PALETTE, rb),
-        LightingMode::Breathing { col } => palette!(BREATHING_PALETTE, rb, col),
-        LightingMode::SingleColour { col } => rb = rb.extend_contiguous(&col.bytes())?,
-        LightingMode::BreathingSingleColour { col } => rb = rb.extend_contiguous(&col.bytes())?,
-        LightingMode::Tail => palette!(TAIL_PALETTE, rb),
-        LightingMode::Rave { col } => palette!(RAVE_PALETTE, rb, col),
-        LightingMode::Wave => palette!(WAVE_PALETTE, rb),
+        LightingMode::Glorious => palette!(GLORIOUS_PALETTE, mb),
+        LightingMode::SeamlessBreathing => palette!(SEAMLESS_BREATHING_PALETTE, mb),
+        LightingMode::Breathing { col } => palette!(BREATHING_PALETTE, mb, col),
+        LightingMode::SingleColour { col } => mb = mb.extend_block(&col.bytes())?,
+        LightingMode::BreathingSingleColour { col } => mb = mb.extend_block(&col.bytes())?,
+        LightingMode::Tail => palette!(TAIL_PALETTE, mb),
+        LightingMode::Rave { col } => palette!(RAVE_PALETTE, mb, col),
+        LightingMode::Wave => palette!(WAVE_PALETTE, mb),
     }
 
-    let reports = rb.build();
-    for report in reports {
-        report.send(mouse)?;
-    }
-
+    mb.build().send(mouse)?;
     Ok(())
 }

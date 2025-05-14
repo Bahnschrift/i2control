@@ -14,27 +14,50 @@ const DEFAULT_HEADER_LEN: usize = 5;
 const REPORT_INTERVAL: Duration = Duration::from_millis(10);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Report {
-    // TODO: Make non-public
-    pub data: Vec<u8>,
+struct Report {
+    data: Vec<u8>,
+}
+
+pub const fn default_header(operation: u8, index: u8) -> [u8; DEFAULT_HEADER_LEN] {
+    [REPORT_ID, operation, 0xFB, index, 0x01]
 }
 
 impl Report {
-    pub const fn default_header(operation: u8, index: u8) -> [u8; DEFAULT_HEADER_LEN] {
-        [REPORT_ID, operation, 0xFB, index, 0x01]
-    }
-
     /// Sends the feature report to the given mouse.
     ///
     /// Sleeps for [`REPORT_INTERVAL`] after sending to allow time to process requests.
-    pub fn send(&self, mouse: &HidDevice) -> HidResult<()> {
+    fn send(&self, mouse: &HidDevice) -> HidResult<()> {
         mouse.send_feature_report(self.data.as_slice())?;
         thread::sleep(REPORT_INTERVAL);
         Ok(())
     }
 }
 
-pub struct ReportBuilder<'a> {
+/// A message consists of one or more reports which may be sent to a mouse to perform some
+/// operation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Message {
+    reports: Vec<Report>,
+}
+
+impl Message {
+    fn new(reports: Vec<Report>) -> Self {
+        Self { reports }
+    }
+
+    /// Sends each report in the current message.
+    ///
+    /// Sleeps for [`REPORT_INTERVAL`] after sending each report to allow time to process.
+    pub fn send(self, mouse: &HidDevice) -> HidResult<()> {
+        for report in self.reports {
+            report.send(mouse)?;
+        }
+
+        Ok(())
+    }
+}
+
+pub struct MessageBuilder<'a> {
     operation: u8,
     num_reports: u8,
     data: Vec<Vec<u8>>,
@@ -44,7 +67,7 @@ pub struct ReportBuilder<'a> {
 }
 
 #[cfg_attr(debug_assertions, allow(dead_code))]
-impl<'a> ReportBuilder<'a> {
+impl<'a> MessageBuilder<'a> {
     pub fn new(operation: u8, num_reports: u8) -> Self {
         Self {
             operation,
@@ -122,7 +145,7 @@ impl<'a> ReportBuilder<'a> {
         Ok(self)
     }
 
-    pub fn extend_contiguous(mut self, bytes: &[u8]) -> ReportBuilderResult<Self> {
+    pub fn extend_block(mut self, bytes: &[u8]) -> ReportBuilderResult<Self> {
         if bytes.len() > self.data_len() {
             return Err(ReportBuilderError::LengthError);
         }
@@ -141,14 +164,14 @@ impl<'a> ReportBuilder<'a> {
         Ok(self)
     }
 
-    pub fn build(mut self) -> Vec<Report> {
+    pub fn build(mut self) -> Message {
         let mut reports = Vec::with_capacity(self.num_reports as usize);
 
         for (i, bytes) in self.data.into_iter().enumerate() {
             let mut report = Report {
                 data: match self.header_fn {
                     Some(ref mut header_fn) => header_fn(i as u8),
-                    None => Report::default_header(self.operation, i as u8).to_vec(),
+                    None => default_header(self.operation, i as u8).to_vec(),
                 },
             };
 
@@ -161,7 +184,7 @@ impl<'a> ReportBuilder<'a> {
             reports.push(report);
         }
 
-        reports
+        Message::new(reports)
     }
 }
 
