@@ -58,51 +58,53 @@ pub enum Commands {
     #[command(short_flag = 'b')]
     Battery {},
 
-    /// Configure DPI profiles
+    /// Configure DPI profiles.
     ///
-    /// Also allows configuring lift off distance, debouce time, and polling rate
+    /// Also allows configuring lift off distance, debouce time, and polling rate.
     ///
     /// Note that all of these will be overriden with defaults when using this command, unless
-    /// otherwise specified
+    /// otherwise specified.
     // TODO: Allow selecting a specific profile instead of just the first one
     #[command(short_flag = 'd')]
     Dpi {
-        /// Lift off distance (in mm)
+        /// Lift off distance (mm).
         ///
-        /// Only values of 1 or 2 are accepted
+        /// The maximum distance from a surface at which the mouse will register movement.
+        ///
+        /// Only values of 1 or 2 are accepted.
         #[arg(short = 'l', long = "lift")]
-        #[arg(default_value_t = 0x01, value_parser = range!(u8, 0x00, 0x1))]
+        #[arg(default_value_t = 0x01, value_parser = range!(u8, 0x01, 0x2))]
         lift_off_distance: u8,
 
-        /// Debounce time (in ms)
+        /// Debounce time (ms).
         ///
-        /// Must be between 0 and 16 (inclusive)
-        /// Odd values will be rounded up
+        /// Must be between 0 and 16 (inclusive).
+        /// Odd values will be rounded up.
         #[arg(short = 'd', long = "debounce")]
         #[arg(default_value_t = 0x02, value_parser = range!(u8, 0x00, 0x10))]
         debounce_time: u8,
 
-        /// Polling rate (in Hz)
+        /// Polling rate (Hz).
         ///
-        /// Maximum value of 1000Hz
-        /// Will be rounded to the nearest of 125Hz, 250Hz, 500Hz, or 1000Hz
+        /// Maximum value of 1000Hz, and will be rounded to the nearest of 125Hz, 250Hz, 500Hz, or
+        /// 1000Hz.
         #[arg(short = 'p', long = "polling")]
         #[arg(default_value_t = 1000, value_parser = range!(u16, 0, 1000))]
         polling_rate: u16,
 
-        /// DPI Stages
+        /// DPI Stages.
         ///
-        /// Each stage has a maximum value of 26000
-        /// Will be rounded to the nearest multiple of 50
+        /// Each stage has a maximum value of 26000, and will be rounded to the nearest multiple of
+        /// 50.
         #[arg(required = true, num_args = 1..=6, value_parser = range!(u16, 50, 26000))]
         dpi_stages: Vec<u16>,
     },
 
+    /// Set the global inactivity timeout.
     #[command(short_flag = 't')]
-    #[command(about = "Set the inactivity timeout")]
     #[group(required = true, multiple = false)]
     Timeout {
-        /// Disable auto inactivity sleep
+        /// Disable global inactivity timeout
         #[arg(short = 'd', long = "disable")]
         disable: bool,
 

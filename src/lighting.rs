@@ -63,9 +63,9 @@ const OPERATION_ID: u8 = 0x02;
 
 macro_rules! palette {
     ($p:expr, $mb:ident $(, $c:expr)?) => {{
-        $($mb = $mb.push_block(&$c.bytes())?;)?
+        $($mb = $mb.push_block(&$c.bytes());)?
         for c in $p {
-            $mb = $mb.push_block(&c.bytes())?;
+            $mb = $mb.push_block(&c.bytes());
         }
     }};
 }
@@ -76,29 +76,30 @@ pub fn set_lighting(
     rate: u8,
     mode: LightingMode,
 ) -> Result<(), Box<dyn Error>> {
-    let mut mb = MessageBuilder::new_with_header(OPERATION_ID, 3, 6, |index| {
-        let mut header = default_header(0x02, index).to_vec();
-        header.push(mode.mode_id());
-        header
-    })
-    .push(rate)?
-    .push(brightness)?
-    .push(mode.num_colours())?
-    .push(rate)?
-    .push(brightness)?;
+    let mut mb = MessageBuilder::new(OPERATION_ID, 3)
+        .with_header(|i| {
+            let mut header = default_header(0x02, i).to_vec();
+            header.push(mode.mode_id());
+            header
+        })
+        .push(rate)
+        .push(brightness)
+        .push(mode.num_colours())
+        .push(rate)
+        .push(brightness);
 
     match mode {
         LightingMode::Off => (),
         LightingMode::Glorious => palette!(GLORIOUS_PALETTE, mb),
         LightingMode::SeamlessBreathing => palette!(SEAMLESS_BREATHING_PALETTE, mb),
         LightingMode::Breathing { col } => palette!(BREATHING_PALETTE, mb, col),
-        LightingMode::SingleColour { col } => mb = mb.push_block(&col.bytes())?,
-        LightingMode::BreathingSingleColour { col } => mb = mb.push_block(&col.bytes())?,
+        LightingMode::SingleColour { col } => mb = mb.push_block(&col.bytes()),
+        LightingMode::BreathingSingleColour { col } => mb = mb.push_block(&col.bytes()),
         LightingMode::Tail => palette!(TAIL_PALETTE, mb),
         LightingMode::Rave { col } => palette!(RAVE_PALETTE, mb, col),
         LightingMode::Wave => palette!(WAVE_PALETTE, mb),
     }
 
-    mb.build().send(mouse)?;
+    mb.build()?.send(mouse)?;
     Ok(())
 }

@@ -27,6 +27,10 @@ struct Report {
 }
 
 impl Report {
+    fn new(data: Vec<u8>) -> Self {
+        Self { data }
+    }
+
     /// Sends the feature report to the given mouse.
     ///
     /// Sleeps for [`REPORT_INTERVAL`] after sending to allow time to process requests.
@@ -69,140 +73,124 @@ impl Message {
     }
 }
 
-pub struct MessageBuilder<'a> {
-    operation: u8,
+pub struct MessageBuilder<'header> {
     num_reports: u8,
-    data: Vec<Vec<u8>>,
-    i: usize,
-    header_len: usize,
-    header_fn: Option<Box<dyn FnMut(u8) -> Vec<u8> + 'a>>,
+    blocks: Vec<Vec<u8>>,
+    header_fn: Box<dyn FnMut(u8) -> Vec<u8> + 'header>,
 }
 
-#[cfg_attr(debug_assertions, allow(dead_code))]
-impl<'a> MessageBuilder<'a> {
-    pub fn new(operation: u8, num_reports: u8) -> Self {
+impl<'header> MessageBuilder<'header> {
+    pub fn new(operation_id: u8, num_reports: u8) -> Self {
         Self {
-            operation,
             num_reports,
-            data: vec![Vec::new(); num_reports as usize],
-            i: 0,
-            header_len: DEFAULT_HEADER_LEN,
-            header_fn: None,
+            blocks: Vec::new(),
+            header_fn: Box::new(move |i| default_header(operation_id, i).to_vec()),
         }
     }
 
-    /// The header is the first few bytes of every report in a message.
-    /// Usually these bytes are the same, but sometimes a custom header is required.
-    ///
-    /// If a custom header is required, the supplied `header_fn` closure MUST always return a vector
-    /// with length `header_len` to avoid unexpected behaviour.
-    pub fn new_with_header(
-        operation: u8,
-        num_reports: u8,
-        header_len: usize,
-        header_fn: impl FnMut(u8) -> Vec<u8> + 'a,
-    ) -> Self {
-        Self {
-            operation,
-            num_reports,
-            data: vec![Vec::new(); num_reports as usize],
-            i: 0,
-            header_len,
-            header_fn: Some(Box::new(header_fn)),
-        }
+    pub fn with_header(mut self, header_fn: impl FnMut(u8) -> Vec<u8> + 'header) -> Self {
+        self.header_fn = Box::new(header_fn);
+        self
     }
 
-    fn data_len(&self) -> usize {
-        REPORT_LEN - self.header_len
+    pub fn push(mut self, byte: u8) -> Self {
+        self.blocks.push(vec![byte]);
+        self
     }
 
-    pub fn capacity(&self) -> usize {
-        self.num_reports as usize * self.data_len()
+    pub fn push_block(mut self, block: &[u8]) -> Self {
+        self.blocks.push(block.to_vec());
+        self
     }
 
-    pub fn len(&self) -> usize {
-        self.i * self.data_len() + self.data[self.i].len()
-    }
-
-    /// Moves to the next internal report
-    pub fn incr_report(mut self) -> ReportBuilderResult<Self> {
-        if self.i + 1 == self.num_reports as usize {
-            return Err(ReportBuilderError::LengthError);
+    pub fn build(mut self) -> MessageBuilderResult<Message> {
+        if self.num_reports == 0 {
+            return Err(MessageBuilderError::DataLenError { block_i: 0 })
         }
 
-        self.i += 1;
-        Ok(self)
-    }
-
-    /// Pushes a single byte of data to a report
-    pub fn push(mut self, byte: u8) -> ReportBuilderResult<Self> {
-        if self.data[self.i].len() == self.data_len() {
-            self = self.incr_report()?;
+        let mut reports = Vec::new();
+        let mut report = (self.header_fn)(0);
+        if report.len() > REPORT_LEN {
+            return Err(MessageBuilderError::HeaderLenError { i: 0, header_len: report.len() });
         }
 
-        self.data[self.i].push(byte);
-        Ok(self)
-    }
+        let mut i = 1;
+        for (block_i, block) in self.blocks.into_iter().enumerate() {
+            if report.len() + block.len() > REPORT_LEN {
+                if i == self.num_reports {
+                    return Err(MessageBuilderError::DataLenError { block_i });
+                }
 
-    pub fn push_block(mut self, block: &[u8]) -> ReportBuilderResult<Self> {
-        if block.len() > self.data_len() {
-            return Err(ReportBuilderError::LengthError);
+                // Not enough room for current block
+                report.resize(REPORT_LEN, 0x00);
+                reports.push(Report::new(report));
+
+                report = (self.header_fn)(i);
+                if report.len() > REPORT_LEN {
+                    return Err(MessageBuilderError::HeaderLenError {
+                        i,
+                        header_len: report.len(),
+                    });
+                }
+                i += 1;
+            }
+
+            if report.len() + block.len() > REPORT_LEN {
+                // Current block too long
+                return Err(MessageBuilderError::BlockLenError {
+                    block_i,
+                    block_len: block.len(),
+                });
+            }
+
+            report.extend(block); // Push block to current report
         }
 
-        let remaining_reports = self.num_reports as usize - self.i - 1;
-        let remaining_in_curr = self.data_len() - self.data[self.i].len();
-        if remaining_reports == 0 && remaining_in_curr < block.len() {
-            return Err(ReportBuilderError::LengthError);
+        // Push remaining data
+        report.resize(REPORT_LEN, 0x00);
+        reports.push(Report::new(report));
+
+        // Generate remaining blank reports
+        while i < self.num_reports {
+            report = (self.header_fn)(i);
+            if report.len() > REPORT_LEN {
+                return Err(MessageBuilderError::HeaderLenError {
+                    i,
+                    header_len: report.len(),
+                });
+            }
+            i += 1;
+            report.resize(REPORT_LEN, 0x00);
+            reports.push(Report::new(report));
         }
 
-        if remaining_in_curr < block.len() {
-            self = self.incr_report().unwrap(); // We have checked that remaining_reports > 0
-        }
-
-        self.data[self.i].extend(block);
-        Ok(self)
-    }
-
-    pub fn build(mut self) -> Message {
-        let mut reports = Vec::with_capacity(self.num_reports as usize);
-
-        for (i, bytes) in self.data.into_iter().enumerate() {
-            let mut report = Report {
-                data: match self.header_fn {
-                    Some(ref mut header_fn) => header_fn(i as u8),
-                    None => default_header(self.operation, i as u8).to_vec(),
-                },
-            };
-
-            report.data.extend(bytes);
-            assert!(
-                report.data.len() <= REPORT_LEN,
-                "Report longer than maximum length!"
-            );
-            report.data.resize(REPORT_LEN, 0x0);
-            reports.push(report);
-        }
-
-        Message::new(reports)
+        Ok(Message::new(reports))
     }
 }
 
-type ReportBuilderResult<T> = Result<T, ReportBuilderError>;
+type MessageBuilderResult<T> = Result<T, MessageBuilderError>;
 
-#[derive(Debug, Clone, Copy)]
-pub enum ReportBuilderError {
-    LengthError,
+#[derive(Debug)]
+pub enum MessageBuilderError {
+    DataLenError { block_i: usize },
+    HeaderLenError { i: u8, header_len: usize },
+    BlockLenError { block_i: usize, block_len: usize },
 }
 
-impl std::fmt::Display for ReportBuilderError {
+impl std::fmt::Display for MessageBuilderError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ReportBuilderError::LengthError => write!(
-                f,
-                "Pushing to this report would exceed its maximum capacity",
-            ),
+            MessageBuilderError::DataLenError { block_i } => {
+                write!(f, "Message full, not enough room to write block {block_i}")
+            }
+            MessageBuilderError::HeaderLenError { i, header_len } => {
+                write!(f, "Header {i} too long ({header_len})")
+            }
+            MessageBuilderError::BlockLenError { block_i, block_len } => {
+                write!(f, "Block {block_i} too long ({block_len})")
+            }
         }
     }
 }
 
-impl std::error::Error for ReportBuilderError {}
+impl std::error::Error for MessageBuilderError {}

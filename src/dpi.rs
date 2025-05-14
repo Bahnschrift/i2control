@@ -34,12 +34,12 @@ pub fn set_dpi(
     }
 
     let mut mb = MessageBuilder::new(OPERATION_ID, 4)
-        .push(0x00)? // Select first DPI stage
-        .push(stages.len() as u8)?
-        .push(lift_off_distance)?
-        .push(debounce_time)?
-        .push(polling_rate)?
-        .push(0x00)?;
+        .push(0x00) // Select first DPI stage
+        .push(stages.len() as u8)
+        .push(lift_off_distance)
+        .push(debounce_time)
+        .push(polling_rate)
+        .push(0x00);
 
     for stage in stages {
         mb = mb.push_block(&[
@@ -48,9 +48,9 @@ pub fn set_dpi(
             0xFF,
             0xA4,
             0x0D,
-        ])?;
+        ]);
     }
 
-    mb.build().send(mouse)?;
+    mb.build()?.send(mouse)?;
     Ok(())
 }
