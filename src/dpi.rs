@@ -26,11 +26,11 @@ pub fn set_dpi(
     polling_rate: u16,
     mut stages: Vec<u16>,
 ) -> Result<(), Box<dyn Error>> {
-    let debounce_time = debounce_time.div_ceil(2) * 2;
+    let debounce_time = debounce_time.div_ceil(2) * 2; // Round up to even integers
     let polling_rate = polling_rate_id(polling_rate);
 
     for s in stages.iter_mut() {
-        *s = (*s + 25) / 50;
+        *s = (*s + 25) / 50; // DPI must be a multiple of 50, so we divide and round
     }
 
     let mut mb = MessageBuilder::new(OPERATION_ID, 4)
@@ -42,7 +42,7 @@ pub fn set_dpi(
         .push(0x00)?;
 
     for stage in stages {
-        mb = mb.extend_block(&[
+        mb = mb.push_block(&[
             (stage & 0x00FF) as u8,
             ((stage & 0xFF00) >> 8) as u8,
             0xFF,

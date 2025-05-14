@@ -61,7 +61,7 @@ pub enum Commands {
     /// Configure DPI profiles
     ///
     /// Also allows configuring lift off distance, debouce time, and polling rate
-    /// 
+    ///
     /// Note that all of these will be overriden with defaults when using this command, unless
     /// otherwise specified
     // TODO: Allow selecting a specific profile instead of just the first one

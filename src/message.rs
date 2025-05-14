@@ -1,6 +1,6 @@
 use std::{thread, time::Duration};
 
-use hidapi::{HidDevice, HidResult, MAX_REPORT_DESCRIPTOR_SIZE};
+use hidapi::{HidDevice, HidResult};
 
 /// ID required as the first byte of all HID Reports.
 pub const REPORT_ID: u8 = 0x03;
@@ -12,7 +12,7 @@ pub const REPORT_LEN: usize = 16;
 const DEFAULT_HEADER_LEN: usize = 5;
 
 /// Time to wait between each report of a message.
-/// 
+///
 /// DPI operations seem to be particularly sensitive to this.
 /// Assuming Core operates in a similar way, it seems like it uses a 150ms interval.
 const REPORT_INTERVAL: Duration = Duration::from_millis(150);
@@ -144,35 +144,22 @@ impl<'a> MessageBuilder<'a> {
         Ok(self)
     }
 
-    pub fn extend(mut self, bytes: &[u8]) -> ReportBuilderResult<Self> {
-        // Exit without pushing anything if we don't have room to push everything
-        if self.capacity() - self.len() < bytes.len() {
-            return Err(ReportBuilderError::LengthError);
-        }
-
-        for byte in bytes {
-            self = self.push(*byte)?;
-        }
-
-        Ok(self)
-    }
-
-    pub fn extend_block(mut self, bytes: &[u8]) -> ReportBuilderResult<Self> {
-        if bytes.len() > self.data_len() {
+    pub fn push_block(mut self, block: &[u8]) -> ReportBuilderResult<Self> {
+        if block.len() > self.data_len() {
             return Err(ReportBuilderError::LengthError);
         }
 
         let remaining_reports = self.num_reports as usize - self.i - 1;
         let remaining_in_curr = self.data_len() - self.data[self.i].len();
-        if remaining_reports == 0 && remaining_in_curr < bytes.len() {
+        if remaining_reports == 0 && remaining_in_curr < block.len() {
             return Err(ReportBuilderError::LengthError);
         }
 
-        if remaining_in_curr < bytes.len() {
+        if remaining_in_curr < block.len() {
             self = self.incr_report().unwrap(); // We have checked that remaining_reports > 0
         }
 
-        self.data[self.i].extend(bytes);
+        self.data[self.i].extend(block);
         Ok(self)
     }
 

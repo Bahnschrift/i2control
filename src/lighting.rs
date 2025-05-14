@@ -63,9 +63,9 @@ const OPERATION_ID: u8 = 0x02;
 
 macro_rules! palette {
     ($p:expr, $mb:ident $(, $c:expr)?) => {{
-        $($mb = $mb.extend_block(&$c.bytes())?;)?
+        $($mb = $mb.push_block(&$c.bytes())?;)?
         for c in $p {
-            $mb = $mb.extend_block(&c.bytes())?;
+            $mb = $mb.push_block(&c.bytes())?;
         }
     }};
 }
@@ -92,8 +92,8 @@ pub fn set_lighting(
         LightingMode::Glorious => palette!(GLORIOUS_PALETTE, mb),
         LightingMode::SeamlessBreathing => palette!(SEAMLESS_BREATHING_PALETTE, mb),
         LightingMode::Breathing { col } => palette!(BREATHING_PALETTE, mb, col),
-        LightingMode::SingleColour { col } => mb = mb.extend_block(&col.bytes())?,
-        LightingMode::BreathingSingleColour { col } => mb = mb.extend_block(&col.bytes())?,
+        LightingMode::SingleColour { col } => mb = mb.push_block(&col.bytes())?,
+        LightingMode::BreathingSingleColour { col } => mb = mb.push_block(&col.bytes())?,
         LightingMode::Tail => palette!(TAIL_PALETTE, mb),
         LightingMode::Rave { col } => palette!(RAVE_PALETTE, mb, col),
         LightingMode::Wave => palette!(WAVE_PALETTE, mb),
