@@ -2,6 +2,8 @@ A "message" consists of 1 or more "reports", and contains information for a sing
 
 Though Glorious Core sends reports as 64 bytes, only 16 bytes are actually used, so the length of a report can be considered as 16 bytes.
 
+Sending a message sends each report sequentially, with around a 150ms interval between each.
+
 All reports in a message begin with a header, which is usually the following:
 
 Byte 1: 0x03 (HID Report ID)
@@ -104,14 +106,14 @@ Byte 6:  Current DPI stage index (0x00 to 0x05)
 Byte 7:  # of DPI stages (0x00 to 0x06)
 Byte 8:  Lift off distance (in mm, either 0x01 or 0x02)
 Byte 9:  Debounce time (in ms, 0x00 to 0x10. Core only sends multiples of 2)
-Byte 10: Polling rate (0x1 = 125Hz, 0x2 = 250hz, 0x3 = 500Hz, 0x4 = 1000Hz)
+Byte 10: Polling rate (0x1 = 125Hz, 0x2 = 250Hz, 0x3 = 500Hz, 0x4 = 1000Hz)
 Byte 11: 0x00
 
 Each DPI stage is then sent as a block of 5 bytes in the following format:
-Bytes 1 - 2: (DPI / 50) in little endian
+Bytes 1 - 2: (DPI / 50) in little endian (0x01 to 0x208)
 Bytes 3 - 5: RGB of the stage in Glorious Core
 
-The colour sent as bytes 3 - 5 in each block does not matter.
+The colour sent as bytes 3 - 5 in each block doesn't matter, but it does need to match one of the colours defined in Glorious Core (e.g. #FFA40D). Colours can be repeated.
 
 Sending 0 DPI stages does work and is done by Glorious Core, but in this case the mouse just uses whichever DPI it previously had active.
 

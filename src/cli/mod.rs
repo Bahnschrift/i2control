@@ -11,6 +11,12 @@ pub const I2_WL_VID: u16 = 0x93A;
 /// Model I2 Wireless 2.4GHz wireless mode Product ID
 pub const I2_WL_PID: u16 = 0x821D;
 
+macro_rules! range {
+    ($t:ty, $l:expr, $h:expr) => {
+        value_parser!($t).range($l..=$h)
+    };
+}
+
 /// CLI Arguments
 #[derive(Debug, Parser)]
 #[command(
@@ -33,33 +39,64 @@ pub struct Cli {
 /// Command types
 #[derive(Debug, Subcommand)]
 pub enum Commands {
-    #[command(short_flag = 'p')]
-    #[command(about = "Set the polling rate")]
-    PollingRate { polling_rate: u16 },
-
-    // #[command(subcommand, subcommand_help_heading = "RGB Modes")]
+    /// Configure RGB lighting settings
     #[command(name = "rgb", short_flag = 'l')]
-    #[command(about = "Configure RGB lighting settings")]
     Lighting {
         /// Ranges from 0 to 20 (inclusive)
-        #[arg(value_parser = value_parser!(u8).range(0x00..=0x14))]
+        #[arg(value_parser = range!(u8, 0x00, 0x14))]
         brightness: u8,
 
         /// Ranges from 1 to 20 (inclusive)
-        #[arg(value_parser = value_parser!(u8).range(0x01..=0x14))]
+        #[arg(value_parser = range!(u8, 0x01, 0x14))]
         rate: u8,
 
         #[command(subcommand)]
         mode: LightingMode,
     },
 
+    /// Get the current battery percentage
     #[command(short_flag = 'b')]
-    #[command(about = "Get the current battery percentage")]
     Battery {},
 
+    /// Configure DPI profiles
+    ///
+    /// Also allows configuring lift off distance, debouce time, and polling rate
+    /// 
+    /// Note that all of these will be overriden with defaults when using this command, unless
+    /// otherwise specified
+    // TODO: Allow selecting a specific profile instead of just the first one
     #[command(short_flag = 'd')]
-    #[command(about = "Configure DPI profiles")]
-    Dpi {},
+    Dpi {
+        /// Lift off distance (in mm)
+        ///
+        /// Only values of 1 or 2 are accepted
+        #[arg(short = 'l', long = "lift")]
+        #[arg(default_value_t = 0x01, value_parser = range!(u8, 0x00, 0x1))]
+        lift_off_distance: u8,
+
+        /// Debounce time (in ms)
+        ///
+        /// Must be between 0 and 16 (inclusive)
+        /// Odd values will be rounded up
+        #[arg(short = 'd', long = "debounce")]
+        #[arg(default_value_t = 0x02, value_parser = range!(u8, 0x00, 0x10))]
+        debounce_time: u8,
+
+        /// Polling rate (in Hz)
+        ///
+        /// Maximum value of 1000Hz
+        /// Will be rounded to the nearest of 125Hz, 250Hz, 500Hz, or 1000Hz
+        #[arg(short = 'p', long = "polling")]
+        #[arg(default_value_t = 1000, value_parser = range!(u16, 0, 1000))]
+        polling_rate: u16,
+
+        /// DPI Stages
+        ///
+        /// Each stage has a maximum value of 26000
+        /// Will be rounded to the nearest multiple of 50
+        #[arg(required = true, num_args = 1..=6, value_parser = range!(u16, 50, 26000))]
+        dpi_stages: Vec<u16>,
+    },
 
     #[command(short_flag = 't')]
     #[command(about = "Set the inactivity timeout")]
@@ -73,7 +110,7 @@ pub enum Commands {
         ///
         /// A value of 100 is rendered as infinity in Glorious Core.
         /// It is untested whether this is equivalent to disabling the timeout.
-        #[arg(value_parser = value_parser!(u8).range(0x00..=0x64))]
+        #[arg(value_parser = range!(u8, 0x00, 0x64))]
         minutes: Option<u8>,
     },
 }

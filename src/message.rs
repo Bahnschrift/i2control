@@ -1,25 +1,29 @@
 use std::{thread, time::Duration};
 
-use hidapi::{HidDevice, HidResult};
+use hidapi::{HidDevice, HidResult, MAX_REPORT_DESCRIPTOR_SIZE};
 
-/// ID required as the first byte of all HID Reports
+/// ID required as the first byte of all HID Reports.
 pub const REPORT_ID: u8 = 0x03;
 
-/// Number of bytes in each report
+/// Number of bytes in each report.
 pub const REPORT_LEN: usize = 16;
 
-/// Number of bytes required for the header of each report
+/// Number of bytes required for the header of each report.
 const DEFAULT_HEADER_LEN: usize = 5;
 
-const REPORT_INTERVAL: Duration = Duration::from_millis(10);
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct Report {
-    data: Vec<u8>,
-}
+/// Time to wait between each report of a message.
+/// 
+/// DPI operations seem to be particularly sensitive to this.
+/// Assuming Core operates in a similar way, it seems like it uses a 150ms interval.
+const REPORT_INTERVAL: Duration = Duration::from_millis(150);
 
 pub const fn default_header(operation: u8, index: u8) -> [u8; DEFAULT_HEADER_LEN] {
     [REPORT_ID, operation, 0xFB, index, 0x01]
+}
+
+#[derive(Clone, PartialEq, Eq)]
+struct Report {
+    data: Vec<u8>,
 }
 
 impl Report {
@@ -30,6 +34,14 @@ impl Report {
         mouse.send_feature_report(self.data.as_slice())?;
         thread::sleep(REPORT_INTERVAL);
         Ok(())
+    }
+}
+
+impl std::fmt::Debug for Report {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Report")
+            .field("data", &format_args!("{:02X?}", self.data))
+            .finish()
     }
 }
 
