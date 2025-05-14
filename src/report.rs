@@ -1,3 +1,5 @@
+use std::{thread, time::Duration};
+
 use hidapi::{HidDevice, HidResult};
 
 /// ID required as the first byte of all HID Reports
@@ -8,6 +10,8 @@ pub const REPORT_LEN: usize = 16;
 
 /// Number of bytes required for the header of each report
 const DEFAULT_HEADER_LEN: usize = 5;
+
+const REPORT_INTERVAL: Duration = Duration::from_millis(10);
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Report {
@@ -20,8 +24,13 @@ impl Report {
         [REPORT_ID, operation, 0xFB, index, 0x01]
     }
 
+    /// Sends the feature report to the given mouse.
+    ///
+    /// Sleeps for [`REPORT_INTERVAL`] after sending to allow time to process requests.
     pub fn send(&self, mouse: &HidDevice) -> HidResult<()> {
-        mouse.send_feature_report(self.data.as_slice())
+        mouse.send_feature_report(self.data.as_slice())?;
+        thread::sleep(REPORT_INTERVAL);
+        Ok(())
     }
 }
 
@@ -34,6 +43,7 @@ pub struct ReportBuilder<'a> {
     header_fn: Option<Box<dyn FnMut(u8) -> Vec<u8> + 'a>>,
 }
 
+#[cfg_attr(debug_assertions, allow(dead_code))]
 impl<'a> ReportBuilder<'a> {
     pub fn new(operation: u8, num_reports: u8) -> Self {
         Self {
