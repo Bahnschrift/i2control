@@ -111,7 +111,7 @@ impl<'header> MessageBuilder<'header> {
         let mut reports = Vec::new();
         let mut report = (self.header_fn)(0);
         if report.len() > REPORT_LEN {
-            return Err(MessageBuilderError::HeaderLenError { i: 0, header_len: report.len() });
+            return Err(MessageBuilderError::HeaderLenError { report_i: 0, header_len: report.len() });
         }
 
         let mut i = 1;
@@ -128,11 +128,13 @@ impl<'header> MessageBuilder<'header> {
                 report = (self.header_fn)(i);
                 if report.len() > REPORT_LEN {
                     return Err(MessageBuilderError::HeaderLenError {
-                        i,
+                        report_i: i,
                         header_len: report.len(),
                     });
                 }
+
                 i += 1;
+                continue;
             }
 
             if report.len() + block.len() > REPORT_LEN {
@@ -155,7 +157,7 @@ impl<'header> MessageBuilder<'header> {
             report = (self.header_fn)(i);
             if report.len() > REPORT_LEN {
                 return Err(MessageBuilderError::HeaderLenError {
-                    i,
+                    report_i: i,
                     header_len: report.len(),
                 });
             }
@@ -173,7 +175,7 @@ type MessageBuilderResult<T> = Result<T, MessageBuilderError>;
 #[derive(Debug)]
 pub enum MessageBuilderError {
     DataLenError { block_i: usize },
-    HeaderLenError { i: u8, header_len: usize },
+    HeaderLenError { report_i: u8, header_len: usize },
     BlockLenError { block_i: usize, block_len: usize },
 }
 
@@ -183,8 +185,8 @@ impl std::fmt::Display for MessageBuilderError {
             MessageBuilderError::DataLenError { block_i } => {
                 write!(f, "Message full, not enough room to write block {block_i}")
             }
-            MessageBuilderError::HeaderLenError { i, header_len } => {
-                write!(f, "Header {i} too long ({header_len})")
+            MessageBuilderError::HeaderLenError { report_i: i, header_len } => {
+                write!(f, "Header of report {i} too long ({header_len})")
             }
             MessageBuilderError::BlockLenError { block_i, block_len } => {
                 write!(f, "Block {block_i} too long ({block_len})")

@@ -2,7 +2,7 @@ use std::error::Error;
 
 use hidapi::HidDevice;
 
-use crate::message::MessageBuilder;
+use super::message::MessageBuilder;
 
 const OPERATION_ID: u8 = 0x04;
 

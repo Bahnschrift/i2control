@@ -1,19 +1,12 @@
-// TODO: Proper project structure - may need a workspace
 mod cli;
-mod dpi;
-mod lighting;
-mod message;
-mod timeout;
-mod util;
+
+use std::error::Error;
 
 use clap::Parser;
-use cli::{Cli, Commands};
-use dpi::set_dpi;
-use lighting::set_lighting;
-use std::error::Error;
-use timeout::set_timeout;
-
 use hidapi::{DeviceInfo, HidApi};
+
+use cli::{Cli, Commands};
+use i2control::device::{dpi::set_dpi, lighting::set_lighting, timeout::set_timeout};
 
 fn print_device_info(info: &DeviceInfo) {
     println!(
