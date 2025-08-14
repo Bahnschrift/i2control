@@ -41,7 +41,7 @@ impl Rgb {
         Rgb { r, g, b }
     }
 
-    pub fn bytes(&self) -> [u8; 3] {
+    pub const fn bytes(&self) -> [u8; 3] {
         [self.r, self.g, self.b]
     }
 }

@@ -2,11 +2,17 @@ use std::error::Error;
 
 use hidapi::HidDevice;
 
+use crate::{rgb, util::rgb::Rgb};
+
 use super::message::MessageBuilder;
 
 const OPERATION_ID: u8 = 0x04;
 
 const POLLING_RATES: [u16; 4] = [125, 250, 500, 1000];
+
+/// For some reason, setting a DPI stage also requires a valid colour to be sent to the mouse (i.e.
+/// one of the colours from Glorious Core). This is the first one of those.
+const STAGE_RGB: [u8; 3] = rgb!(0xFFA40D).bytes();
 
 fn polling_rate_id(polling_rate: u16) -> u8 {
     let (i, _) = POLLING_RATES
@@ -45,9 +51,9 @@ pub fn set_dpi(
         mb = mb.push_block(&[
             (stage & 0x00FF) as u8,
             ((stage & 0xFF00) >> 8) as u8,
-            0xFF,
-            0xA4,
-            0x0D,
+            STAGE_RGB[0],
+            STAGE_RGB[1],
+            STAGE_RGB[2],
         ]);
     }
 
